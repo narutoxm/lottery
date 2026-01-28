@@ -1,4 +1,5 @@
 const express = require("express");
+const fs = require("fs");
 const opn = require("opn");
 const bodyParser = require("body-parser");
 const path = require("path");
@@ -50,7 +51,7 @@ app.get("/", (req, res) => {
 });
 
 //设置跨域访问
-app.all("*", function(req, res, next) {
+app.all("*", function (req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Headers", "X-Requested-With");
   res.header("Access-Control-Allow-Methods", "PUT,POST,GET,DELETE,OPTIONS");
@@ -208,9 +209,29 @@ function loadData() {
   let cfgData = {};
 
   // curData.users = loadXML(path.join(cwd, "data/users.xlsx"));
-  curData.users = loadXML(path.join(dataBath, "data/users.xlsx"));
+  // curData.users = loadXML(path.join(dataBath, "data/users.xlsx"));
+
+  // Load from user.txt
+  const userTxtPath = path.join(dataBath, "data/user.txt");
+  if (fs.existsSync(userTxtPath)) {
+    console.log("Loading users from user.txt");
+    const content = fs.readFileSync(userTxtPath, 'utf-8');
+    // Assume format: EnglishName\tChineseName or similar
+    // Assume format: Space/Tab separated names, multiple per line allowed
+    const tokens = content.split(/[\s\n\r]+/);
+    curData.users = tokens
+      .map(t => t.trim())
+      .filter(t => t.length > 0)
+      .map(name => [name, name]); // Use name as both ID and Name
+  } else {
+    console.log("user.txt not found, fallback to xlsx");
+    curData.users = loadXML(path.join(dataBath, "data/users.xlsx"));
+  }
+
   // 重新洗牌
   shuffle(curData.users);
+  console.log(`Loaded ${curData.users.length} users.`);
+
 
   // 读取已经抽取的结果
   loadTempData()
@@ -247,7 +268,7 @@ function getLeftUsers() {
 loadData();
 
 module.exports = {
-  run: function(devPort, noOpen) {
+  run: function (devPort, noOpen) {
     let openBrowser = true;
     if (process.argv.length > 3) {
       if (process.argv[3] && (process.argv[3] + "").toLowerCase() === "n") {

@@ -56,8 +56,8 @@ a {
 }
 
 .element {
-  width: 12vh;
-  height: 16vh;
+  width: 10vh;
+  height: 14vh;
   box-shadow: 0 0 12px rgba(0, 255, 255, 0.5);
   border: 1px solid rgba(127, 255, 255, 0.25);
   text-align: center;
@@ -121,9 +121,9 @@ button:active {
 }
 
 .highlight {
-  background-color: rgba(253, 105, 0, 0.95) !important;
-  box-shadow: 0 0 12px rgba(253, 105, 0, 0.95);
-  border: 1px solid rgba(253, 105, 0, 0.25);
+  background-color: rgba(220, 20, 60, 0.95) !important;
+  box-shadow: 0 0 12px rgba(220, 20, 60, 0.95);
+  border: 1px solid rgba(220, 20, 60, 0.25);
 }
 
 .highlight.element .name {
@@ -136,8 +136,8 @@ button:active {
 
 .prize.element {
   transition: background-color 1.5s ease-in 0.3s;
-  background-color: rgba(253, 105, 0, 0.85) !important;
-  box-shadow: 0 0 12px rgba(253, 105, 0, 0.95);
+  background-color: rgba(220, 20, 60, 0.85) !important;
+  box-shadow: 0 0 12px rgba(220, 20, 60, 0.95);
 }
 
 .prize .company,

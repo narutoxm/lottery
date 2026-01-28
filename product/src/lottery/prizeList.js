@@ -163,27 +163,23 @@ function showPrizeList(currentPrizeIndex) {
     if (item.type === defaultType) {
       return true;
     }
-    htmlCode += `<li id="prize-item-${item.type}" class="prize-item ${
-      item.type == currentPrize.type ? "shine" : ""
-    }">
+    htmlCode += `<li id="prize-item-${item.type}" class="prize-item ${item.type == currentPrize.type ? "shine" : ""
+      }">
                         <span></span><span></span><span></span><span></span>
                         <div class="prize-img">
                             <img src="${item.img}" alt="${item.title}">
                         </div>
                         <div class="prize-text">
-                            <h5 class="prize-title">${item.text} ${
-      item.title
-    }</h5>
+                            <h5 class="prize-title">${item.text} ${item.title
+      }</h5>
                             <div class="prize-count">
                                 <div class="progress">
-                                    <div id="prize-bar-${
-                                      item.type
-                                    }" class="progress-bar progress-bar-danger progress-bar-striped active" style="width: 100%;">
+                                    <div id="prize-bar-${item.type
+      }" class="progress-bar progress-bar-danger progress-bar-striped active" style="width: 100%;">
                                     </div>
                                 </div>
-                                <div id="prize-count-${
-                                  item.type
-                                }" class="prize-count-left">
+                                <div id="prize-count-${item.type
+      }" class="prize-count-left">
                                     ${item.count + "/" + item.count}
                                 </div>
                             </div>
@@ -253,12 +249,12 @@ let setPrizeData = (function () {
       return;
     }
 
-    count = totalCount - count;
-    count = count < 0 ? 0 : count;
+    let leftCount = totalCount - count;
+    leftCount = leftCount < 0 ? 0 : leftCount;
     let percent = (count / totalCount).toFixed(2);
     elements.bar && (elements.bar.style.width = percent * 100 + "%");
     elements.text && (elements.text.textContent = count + "/" + totalCount);
-    prizeElement.prizeLeft.textContent = count;
+    prizeElement.prizeLeft.textContent = leftCount;
   };
 })();
 

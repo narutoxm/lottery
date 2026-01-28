@@ -1,4 +1,5 @@
 import "./index.css";
+import "./responsive.css";
 import "../css/animate.min.css";
 import "./canvas.js";
 import {
@@ -22,8 +23,8 @@ let TOTAL_CARDS,
   },
   prizes,
   EACH_COUNT,
-  ROW_COUNT = 7,
-  COLUMN_COUNT = 17,
+  ROW_COUNT,
+  COLUMN_COUNT,
   COMPANY,
   HIGHLIGHT_CELL = [],
   // 当前的比例
@@ -74,18 +75,30 @@ function initAll() {
       basicData.prizes = prizes;
       setPrizes(prizes);
 
+      // 响应式布局调整
+      if (window.innerWidth < 768) {
+        // 手机竖屏模式：少列多行
+        COLUMN_COUNT = 4;
+        ROW_COUNT = 14;
+      } else {
+        // 桌面横屏模式
+        COLUMN_COUNT = 17;
+        ROW_COUNT = 7;
+      }
+
       TOTAL_CARDS = ROW_COUNT * COLUMN_COUNT;
 
       // 读取当前已设置的抽奖结果
       basicData.leftUsers = data.leftUsers;
       basicData.luckyUsers = data.luckyData;
 
-      let prizeIndex = basicData.prizes.length - 1;
-      for (; prizeIndex > -1; prizeIndex--) {
+      // 从第一轮开始（index 1，因为index 0是特别奖占位符）
+      let prizeIndex = 1;
+      for (; prizeIndex < basicData.prizes.length; prizeIndex++) {
         if (
           data.luckyData[prizeIndex] &&
           data.luckyData[prizeIndex].length >=
-            basicData.prizes[prizeIndex].count
+          basicData.prizes[prizeIndex].count
         ) {
           continue;
         }
@@ -97,6 +110,9 @@ function initAll() {
       showPrizeList(currentPrizeIndex);
       let curLucks = basicData.luckyUsers[currentPrize.type];
       setPrizeData(currentPrizeIndex, curLucks ? curLucks.length : 0, true);
+
+      // 初始化时调用一次resize以设置正确的Resolution和Camera
+      onWindowResize();
     }
   });
 
@@ -109,6 +125,7 @@ function initAll() {
       // startMaoPao();
       animate();
       shineCard();
+      onWindowResize();
     }
   });
 }
@@ -123,8 +140,8 @@ function initCards() {
     index = 0,
     totalMember = member.length,
     position = {
-      x: (140 * COLUMN_COUNT - 20) / 2,
-      y: (180 * ROW_COUNT - 20) / 2
+      x: (120 * COLUMN_COUNT - 20) / 2,
+      y: (160 * ROW_COUNT - 20) / 2
     };
 
   camera = new THREE.PerspectiveCamera(
@@ -156,8 +173,8 @@ function initCards() {
       //
 
       var object = new THREE.Object3D();
-      object.position.x = j * 140 - position.x;
-      object.position.y = -(i * 180) + position.y;
+      object.position.x = j * 120 - position.x;
+      object.position.y = -(i * 160) + position.y;
       targets.table.push(object);
       index++;
     }
@@ -212,7 +229,7 @@ function bindEvent() {
     if (isLotting) {
       if (e.target.id === "lottery") {
         rotateObj.stop();
-        btns.lottery.innerHTML = "开始抽奖";
+        btns.lottery.innerHTML = "开始选人";
       } else {
         addQipao("正在抽奖，抽慢一点点～～");
       }
@@ -229,7 +246,7 @@ function bindEvent() {
       // 进入抽奖
       case "enter":
         removeHighlight();
-        addQipao(`马上抽取[${currentPrize.title}],不要走开。`);
+        addQipao(`马上选取[${currentPrize.title}]参与者,不要走开。`);
         // rotate = !rotate;
         rotate = true;
         switchScreen("lottery");
@@ -242,19 +259,13 @@ function bindEvent() {
         if (!doREset) {
           return;
         }
-        addQipao("重置所有数据，重新抽奖");
-        addHighlight();
-        resetCard();
-        // 重置所有数据
-        currentLuckys = [];
-        basicData.leftUsers = Object.assign([], basicData.users);
-        basicData.luckyUsers = {};
-        currentPrizeIndex = basicData.prizes.length - 1;
-        currentPrize = basicData.prizes[currentPrizeIndex];
-
-        resetPrize(currentPrizeIndex);
-        reset();
-        switchScreen("enter");
+        // 调用服务器重置接口清除数据，然后刷新页面
+        window.AJAX({
+          url: "/reset",
+          success() {
+            window.location.reload();
+          }
+        });
         break;
       // 抽奖
       case "lottery":
@@ -264,10 +275,10 @@ function bindEvent() {
         //更新剩余抽奖数目的数据显示
         changePrize();
         resetCard().then(res => {
-          // 抽奖
+          // 选人
           lottery();
         });
-        addQipao(`正在抽取[${currentPrize.title}],调整好姿势`);
+        addQipao(`正在选取[${currentPrize.title}]参与者,调整好姿势`);
         break;
       // 重新抽奖
       case "reLottery":
@@ -276,7 +287,7 @@ function bindEvent() {
           return;
         }
         setErrorData(currentLuckys);
-        addQipao(`重新抽取[${currentPrize.title}],做好准备`);
+        addQipao(`重新选取[${currentPrize.title}]参与者,做好准备`);
         setLotteryStatus(true);
         // 重新抽奖则直接进行抽取，不对上一次的抽奖数据进行保存
         // 抽奖
@@ -349,7 +360,7 @@ function createCard(user, isBold, id, showTable) {
 
   element.appendChild(createElement("name", user[1]));
 
-  element.appendChild(createElement("details", user[0] + "<br/>" + user[2]));
+  element.appendChild(createElement("details", ""));
   return element;
 }
 
@@ -452,6 +463,17 @@ function onWindowResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+
+  // 动态计算Resolution
+  Resolution = window.innerHeight / BASE_HEIGHT;
+
+  // 移动端适配：如果屏幕较窄，增加相机距离以完整显示内容
+  if (window.innerWidth < 1000) {
+    camera.position.z = 3000 * (1000 / window.innerWidth);
+  } else {
+    camera.position.z = 3000;
+  }
+
   render();
 }
 
@@ -473,19 +495,19 @@ function render() {
 
 function selectCard(duration = 600) {
   rotate = false;
-  let width = 140,
+  let width = 130, // 增加一点间距 (卡片宽10vh约等于100px-110px? 视屏幕而定)
     tag = -(currentLuckys.length - 1) / 2,
     locates = [];
 
   // 计算位置信息, 大于5个分两排显示
   if (currentLuckys.length > 5) {
-    let yPosition = [-87, 87],
+    let yPosition = [-80, 80], // 调整Y轴间距
       l = selectedCardIndex.length,
       mid = Math.ceil(l / 2);
     tag = -(mid - 1) / 2;
     for (let i = 0; i < mid; i++) {
       locates.push({
-        x: tag * width * Resolution,
+        x: tag * width * Resolution, // 这里的Resolution通常为1
         y: yPosition[0] * Resolution
       });
       tag++;
@@ -511,7 +533,7 @@ function selectCard(duration = 600) {
 
   let text = currentLuckys.map(item => item[1]);
   addQipao(
-    `恭喜${text.join("、")}获得${currentPrize.title}, 新的一年必定旺旺旺。`
+    `恭喜${text.join("、")}参与${currentPrize.title}游戏, 祝你们玩得开心！`
   );
 
   selectedCardIndex.forEach((cardIndex, index) => {
@@ -608,49 +630,171 @@ function resetCard(duration = 500) {
 }
 
 /**
- * 抽奖
+ * 选人（支持内定+随机混合模式）
+ */
+/**
+ * 选人（支持内定+随机混合模式）
  */
 function lottery() {
-  // if (isLotting) {
-  //   rotateObj.stop();
-  //   btns.lottery.innerHTML = "开始抽奖";
-  //   return;
-  // }
-  btns.lottery.innerHTML = "结束抽奖";
+  btns.lottery.innerHTML = "结束选人";
   rotateBall().then(() => {
     // 将之前的记录置空
     currentLuckys = [];
     selectedCardIndex = [];
-    // 当前同时抽取的数目,当前奖品抽完还可以继续抽，但是不记录数据
-    let perCount = EACH_COUNT[currentPrizeIndex],
-      luckyData = basicData.luckyUsers[currentPrize.type],
-      leftCount = basicData.leftUsers.length,
-      leftPrizeCount = currentPrize.count - (luckyData ? luckyData.length : 0);
 
-    if (leftCount < perCount) {
-      addQipao("剩余参与抽奖人员不足，现在重新设置所有人员可以进行二次抽奖！");
-      basicData.leftUsers = basicData.users.slice();
-      leftCount = basicData.leftUsers.length;
+    // 获取当前轮次配置
+    let fixedUsers = currentPrize.fixedUsers || [];
+    let randomCount = currentPrize.randomCount || 0;
+
+    // Calculate global win counts for checking max 2 constraint
+    // We need to count ALL wins across all rounds
+    let globalWinCounts = {};
+    const incrementWin = (name) => {
+      globalWinCounts[name] = (globalWinCounts[name] || 0) + 1;
+    };
+
+    // Count existing wins from previous rounds or saved data
+    for (let type in basicData.luckyUsers) {
+      // basicData.luckyUsers might contain current round if re-running?
+      // Usually luckyUsers stores *committed* results.
+      // We should count them.
+      basicData.luckyUsers[type].forEach(user => {
+        incrementWin(user[1]);
+      });
     }
 
-    for (let i = 0; i < perCount; i++) {
-      let luckyId = random(leftCount);
-      currentLuckys.push(basicData.leftUsers.splice(luckyId, 1)[0]);
-      leftCount--;
+    // Determine slots to fill
+    // If resuming a round, we might have partial data? 
+    // Usually lottery() starts fresh for a draw action.
+    // If multiple batches, we should check `basicData.luckyUsers[currentPrize.type]` to see if already partially filled?
+    // The current logic seems to assume `lottery` draws the *remainder* or *all*?
+    // `leftPrizeCount` logic suggests remainder.
+
+    let luckyData = basicData.luckyUsers[currentPrize.type] || [];
+    let leftPrizeCount = currentPrize.count - luckyData.length;
+
+    console.log("Lottery Debug:", {
+      round: currentPrize.text,
+      totalNeed: currentPrize.count,
+      leftPrizeCount: leftPrizeCount,
+      randomCount: randomCount,
+      totalUsers: basicData.users.length
+    });
+
+    let selectedInThisRound = new Set();
+
+    // Track local wins to enforce constraints during this draw
+    // (copy global counts)
+    let currentSessionCounts = { ...globalWinCounts };
+
+    // Helper to check if user can win
+    const canWin = (name) => {
+      return (currentSessionCounts[name] || 0) < 2;
+    };
+
+    // Helper to find index
+    const findUserIndex = (name) => basicData.users.findIndex(u => u[1] === name);
+
+    // 1. Process Fixed Users
+    fixedUsers.forEach(fixedName => {
+      // Only if we still have slots and user hasn't won > 2 times (and not already in this round via some other means?)
+      // Actually fixed users bypass the "random" count but consume the "total" count (leftPrizeCount).
+      if (leftPrizeCount <= 0) return;
+
+      // Check if fixed user is valid for win
+      if (!canWin(fixedName)) {
+        console.warn(`Fixed user ${fixedName} has already won 2 times! Skipping.`);
+        return;
+      }
+
+      // Check deduplication in THIS round
+      if (selectedInThisRound.has(fixedName)) return;
+
+      // Generate user object
+      let idx = findUserIndex(fixedName);
+      let user;
+      if (idx !== -1) {
+        user = basicData.users[idx];
+      } else {
+        // External user
+        user = [fixedName, fixedName];
+      }
+
+      // Add
+      currentLuckys.push(user);
+      selectedInThisRound.add(fixedName);
+      currentSessionCounts[fixedName] = (currentSessionCounts[fixedName] || 0) + 1;
       leftPrizeCount--;
 
+      // Animation card
       let cardIndex = random(TOTAL_CARDS);
-      while (selectedCardIndex.includes(cardIndex)) {
-        cardIndex = random(TOTAL_CARDS);
-      }
+      while (selectedCardIndex.includes(cardIndex)) cardIndex = random(TOTAL_CARDS);
       selectedCardIndex.push(cardIndex);
+    });
 
-      if (leftPrizeCount === 0) {
-        break;
+    // 2. Random Users
+    // We need to fill `Math.min(randomCount, leftPrizeCount)` slots.
+    let needed = Math.min(randomCount, leftPrizeCount);
+
+    if (needed > 0) {
+      // Build Candidate Lists from the POOL (38 users)
+      // Group A: 0 wins (Priority 1)
+      // Group B: 1 win (Priority 2)
+      // Exclude: >= 2 wins
+
+      // Candidates are indices in basicData.users
+      let groupA = []; // 0 wins
+      let groupB = []; // 1 win
+
+      basicData.users.forEach((u, i) => {
+        let name = u[1];
+        // Check if already selected in this round
+        if (selectedInThisRound.has(name)) return;
+
+        let wins = currentSessionCounts[name] || 0;
+        if (wins === 0) {
+          groupA.push(i);
+        } else if (wins === 1) {
+          groupB.push(i);
+        }
+      });
+
+      // Shuffle groups
+      const shuffleArray = (arr) => {
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+      }
+      shuffleArray(groupA);
+      shuffleArray(groupB);
+
+      console.log(`Candidates: Group A (0 wins): ${groupA.length}, Group B (1 win): ${groupB.length}`);
+
+      for (let i = 0; i < needed; i++) {
+        let luckyIndex = -1;
+
+        if (groupA.length > 0) {
+          luckyIndex = groupA.pop();
+        } else if (groupB.length > 0) {
+          luckyIndex = groupB.pop();
+        } else {
+          console.error("Not enough candidates even with 1 win people! Everyone has 2 wins?");
+          break;
+        }
+
+        let user = basicData.users[luckyIndex];
+        currentLuckys.push(user);
+        selectedInThisRound.add(user[1]);
+        currentSessionCounts[user[1]] = (currentSessionCounts[user[1]] || 0) + 1;
+        leftPrizeCount--;
+
+        let cardIndex = random(TOTAL_CARDS);
+        while (selectedCardIndex.includes(cardIndex)) cardIndex = random(TOTAL_CARDS);
+        selectedCardIndex.push(cardIndex);
       }
     }
 
-    // console.log(currentLuckys);
     selectCard();
   });
 }
@@ -672,9 +816,9 @@ function saveData() {
   basicData.luckyUsers[type] = curLucky;
 
   if (currentPrize.count <= curLucky.length) {
-    currentPrizeIndex--;
-    if (currentPrizeIndex <= -1) {
-      currentPrizeIndex = 0;
+    currentPrizeIndex++;
+    if (currentPrizeIndex >= basicData.prizes.length) {
+      currentPrizeIndex = basicData.prizes.length - 1;
     }
     currentPrize = basicData.prizes[currentPrizeIndex];
   }
@@ -707,9 +851,8 @@ function random(num) {
 function changeCard(cardIndex, user) {
   let card = threeDCards[cardIndex].element;
 
-  card.innerHTML = `<div class="company">${COMPANY}</div><div class="name">${
-    user[1]
-  }</div><div class="details">${user[0] || ""}<br/>${user[2] || "PSST"}</div>`;
+  card.innerHTML = `<div class="company">${COMPANY}</div><div class="name">${user[1]
+    }</div><div class="details"></div>`;
 }
 
 /**
