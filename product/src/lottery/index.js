@@ -501,7 +501,7 @@ function selectCard(duration = 600) {
 
   // 计算位置信息, 大于5个分两排显示
   if (currentLuckys.length > 5) {
-    let yPosition = [-80, 80], // 调整Y轴间距
+    let yPosition = [50, -70], // 中央偏上位置
       l = selectedCardIndex.length,
       mid = Math.ceil(l / 2);
     tag = -(mid - 1) / 2;
@@ -646,6 +646,14 @@ function lottery() {
     let fixedUsers = currentPrize.fixedUsers || [];
     let randomCount = currentPrize.randomCount || 0;
 
+    // 收集所有轮次的内定用户，随机选人时排除他们
+    let allFixedUsers = new Set();
+    basicData.prizes.forEach(prize => {
+      if (prize.fixedUsers) {
+        prize.fixedUsers.forEach(name => allFixedUsers.add(name));
+      }
+    });
+
     // Calculate global win counts for checking max 2 constraint
     // We need to count ALL wins across all rounds
     let globalWinCounts = {};
@@ -685,11 +693,11 @@ function lottery() {
 
     // Track local wins to enforce constraints during this draw
     // (copy global counts)
-    let currentSessionCounts = { ...globalWinCounts };
+    let currentSessionCounts = Object.assign({}, globalWinCounts);
 
     // Helper to check if user can win
     const canWin = (name) => {
-      return (currentSessionCounts[name] || 0) < 2;
+      return (currentSessionCounts[name] || 0) < 1;
     };
 
     // Helper to find index
@@ -701,9 +709,9 @@ function lottery() {
       // Actually fixed users bypass the "random" count but consume the "total" count (leftPrizeCount).
       if (leftPrizeCount <= 0) return;
 
-      // Check if fixed user is valid for win
+      // 内定用户也只能玩1次
       if (!canWin(fixedName)) {
-        console.warn(`Fixed user ${fixedName} has already won 2 times! Skipping.`);
+        console.warn(`内定用户 ${fixedName} 已经玩过了，跳过`);
         return;
       }
 
@@ -748,6 +756,8 @@ function lottery() {
 
       basicData.users.forEach((u, i) => {
         let name = u[1];
+        // 跳过所有轮次的内定用户（他们只能在被内定的那一轮出现）
+        if (allFixedUsers.has(name)) return;
         // Check if already selected in this round
         if (selectedInThisRound.has(name)) return;
 

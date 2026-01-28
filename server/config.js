@@ -43,19 +43,9 @@ const prizes = [
     img: "../img/game/7.png"
   },
   {
-    type: 4,
-    count: 10,
-    text: "第四轮",
-    title: "挤眉弄眼",
-    fixedUsers: [],
-    randomCount: 10,
-    img: "../img/game/5.png",
-    allowRepeat: false // Prioritize remaining 8 users, then refill for last 2
-  },
-  {
     type: 5,
     count: 5,
-    text: "第五轮",
+    text: "第四轮",
     title: "蒙眼喝可乐",
     fixedUsers: [],
     randomCount: 5,
@@ -65,28 +55,19 @@ const prizes = [
   {
     type: 6,
     count: 6,
-    text: "第六轮",
+    text: "第五轮",
     title: "电臀达人",
     fixedUsers: ["詹杭州", "邓相虎", "陈宇杰", "林辉华", "余学勇", "胡明达"],
     randomCount: 0,
     img: "../img/game/6.png"
-  },
-  {
-    type: 7,
-    count: 4,
-    text: "第七轮",
-    title: "蒙眼吃香蕉",
-    fixedUsers: ["钟江昊", "詹耀东", "范朋辉", "邹献民"],
-    randomCount: 0,
-    img: "../img/game/7.png"
   }
 ];
 
 /**
  * 一次抽取的人数与prizes对应（每轮选取总人数）
- * 对应: [Particular, R1, R2, R3, R4, R5, R6, R7]
+ * 对应: [Particular, R1, R2, R3, R4, R5]
  */
-const EACH_COUNT = [1, 10, 10, 10, 10, 5, 6, 4];
+const EACH_COUNT = [1, 10, 10, 10, 5, 6];
 
 /**
  * 卡片公司名称标识

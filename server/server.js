@@ -43,7 +43,16 @@ if (process.argv.length > 2) {
   port = process.argv[2];
 }
 
-app.use(express.static(cwd));
+let staticDir = cwd; // 默认使用 cwd，可以通过 setStaticDir 更改
+
+function setStaticDir(dir) {
+  staticDir = dir;
+}
+
+// 使用中间件函数，这样可以动态获取 staticDir
+app.use((req, res, next) => {
+  express.static(staticDir)(req, res, next);
+});
 
 //请求地址为空，默认重定向到index.html文件
 app.get("/", (req, res) => {
@@ -268,7 +277,7 @@ function getLeftUsers() {
 loadData();
 
 module.exports = {
-  run: function (devPort, noOpen) {
+  run: function (devPort, noOpen, staticDirPath) {
     let openBrowser = true;
     if (process.argv.length > 3) {
       if (process.argv[3] && (process.argv[3] + "").toLowerCase() === "n") {
@@ -282,6 +291,14 @@ module.exports = {
 
     if (devPort) {
       port = devPort;
+    }
+
+    // 如果提供了静态文件目录，则设置它
+    if (staticDirPath) {
+      setStaticDir(staticDirPath);
+      console.log(`Using static directory: ${staticDirPath}`);
+    } else {
+      console.log(`Using default static directory: ${staticDir}`);
     }
 
     let server = app.listen(port, () => {
