@@ -501,14 +501,14 @@ function selectCard(duration = 600) {
 
   // 计算位置信息, 大于5个分两排显示
   if (currentLuckys.length > 5) {
-    let yPosition = [50, -70], // 中央偏上位置
+    let yPosition = [120, -120], // 增加两排间距
       l = selectedCardIndex.length,
       mid = Math.ceil(l / 2);
     tag = -(mid - 1) / 2;
     for (let i = 0; i < mid; i++) {
       locates.push({
-        x: tag * width * Resolution, // 这里的Resolution通常为1
-        y: yPosition[0] * Resolution
+        x: tag * width * Resolution, // X保留Resolution缩放
+        y: yPosition[0] // Y使用固定值，不缩放
       });
       tag++;
     }
@@ -517,7 +517,7 @@ function selectCard(duration = 600) {
     for (let i = mid; i < l; i++) {
       locates.push({
         x: tag * width * Resolution,
-        y: yPosition[1] * Resolution
+        y: yPosition[1] // Y使用固定值，不缩放
       });
       tag++;
     }
@@ -572,8 +572,12 @@ function selectCard(duration = 600) {
     .onUpdate(render)
     .start()
     .onComplete(() => {
-      // 动画结束后可以操作
+      // 动画结束后更新显示
       setLotteryStatus();
+      // 更新当前轮次的进度条和剩余人数
+      let luckys = basicData.luckyUsers[currentPrize.type] || [];
+      let luckyCount = luckys.length + currentLuckys.length; // 之前已抽 + 本次抽中
+      setPrizeData(currentPrizeIndex, luckyCount);
     });
 }
 
@@ -842,7 +846,8 @@ function saveData() {
 
 function changePrize() {
   let luckys = basicData.luckyUsers[currentPrize.type];
-  let luckyCount = (luckys ? luckys.length : 0) + EACH_COUNT[currentPrizeIndex];
+  // 只传入当前已抽中的人数，剩余人数由setPrizeData计算
+  let luckyCount = luckys ? luckys.length : 0;
   // 修改左侧prize的数目和百分比
   setPrizeData(currentPrizeIndex, luckyCount);
 }

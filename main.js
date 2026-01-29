@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, globalShortcut, dialog } = require('electron');
 const path = require('path');
 
 let mainWindow;
@@ -8,6 +8,7 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
+    autoHideMenuBar: true, // 隐藏菜单栏
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true
@@ -53,6 +54,21 @@ function createWindow() {
 
   mainWindow.on('closed', function () {
     mainWindow = null;
+  });
+
+  // 注册 Esc 键退出应用（方便 Windows 用户关闭全屏）
+  globalShortcut.register('Escape', () => {
+    dialog.showMessageBox(mainWindow, {
+      type: 'question',
+      buttons: ['取消', '确定退出'],
+      defaultId: 0,
+      title: '确认退出',
+      message: '确定要退出抽奖程序吗？'
+    }).then(result => {
+      if (result.response === 1) {
+        app.quit();
+      }
+    });
   });
 }
 
