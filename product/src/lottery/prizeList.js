@@ -251,7 +251,6 @@ let setPrizeData = (function () {
 
     let leftCount = totalCount - count;
     leftCount = leftCount < 0 ? 0 : leftCount;
-    console.log('setPrizeData Debug:', JSON.stringify({ currentPrizeIndex, type, count, totalCount, leftCount }));
     let percent = (count / totalCount).toFixed(2);
     elements.bar && (elements.bar.style.width = percent * 100 + "%");
     elements.text && (elements.text.textContent = count + "/" + totalCount);
